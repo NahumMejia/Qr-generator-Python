@@ -142,6 +142,12 @@ def main(page: ft.Page):
                     ],
                     alignment=ft.MainAxisAlignment.CENTER,
                 ),
+                ft.Text(
+                    "If the QR doesn’t load, press F5 (Flet limitation).",
+                    size=12,
+                    color=ft.Colors.GREY_500,
+                    text_align=ft.TextAlign.CENTER
+                ),
                 ft.Row(
                     [preview_box],
                     alignment=ft.MainAxisAlignment.CENTER,
