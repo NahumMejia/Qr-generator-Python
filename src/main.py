@@ -1,3 +1,4 @@
+import os
 import flet as ft
 import qrcode
 from io import BytesIO
@@ -63,7 +64,7 @@ def main(page: ft.Page):
     preview_box = ft.Container(
         width=180,
         height=180,
-        alignment=ft.alignment.center,
+        alignment=ft.Alignment.CENTER,
         border=ft.border.all(2, ft.Colors.GREY_400),
         bgcolor=ft.Colors.GREY_100,
         content=ft.Text("Generate QR", color=ft.Colors.GREY_600)
@@ -118,13 +119,16 @@ def main(page: ft.Page):
             [
                 title,
                 url_input,
-                ft.Row([bg_color, code_color, border], alignment="center"),
+                ft.Row(
+                    [bg_color, code_color, border],
+                    alignment=ft.MainAxisAlignment.CENTER,
+                ),
                 ft.Row(
                     [
                         ft.ElevatedButton("GENERATE", on_click=generate_qr),
                         ft.ElevatedButton("OPEN / DOWNLOAD", on_click=open_qr_page),
                     ],
-                    alignment="center",
+                    alignment=ft.MainAxisAlignment.CENTER,
                 ),
                 preview_box,
             ],
@@ -134,4 +138,10 @@ def main(page: ft.Page):
     )
 
 
-ft.app(target=main)
+if __name__ == "__main__":
+    ft.run(
+        target=main,
+        host="0.0.0.0",
+        port=int(os.environ.get("PORT", 8000)),
+        web=True,
+    )
