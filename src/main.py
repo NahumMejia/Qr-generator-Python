@@ -3,11 +3,12 @@ import qrcode
 from io import BytesIO
 import base64
 
+
 def main(page: ft.Page):
     page.title = "QR Code Generator"
+    page.padding = 12
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.padding = 8
 
     colors = {
         "black": "#000000", "white": "#FFFFFF", "red": "#FF0000",
@@ -20,102 +21,117 @@ def main(page: ft.Page):
     }
 
     current_qr_base64 = None
-    current_qr_image = None
-
-    # File save handler for desktop
-    def save_file_result(e: ft.FilePickerResultEvent):
-        if e.path and current_qr_image:
-            try:
-                current_qr_image.save(e.path)
-                show_snackbar("QR Code saved!")
-            except Exception as ex:
-                show_snackbar(f"Error: {str(ex)}")
-
-    save_file_dialog = ft.FilePicker(on_result=save_file_result)
-    page.overlay.append(save_file_dialog)
 
     def show_snackbar(message):
-        page.snack_bar = ft.SnackBar(content=ft.Text(message))
+        page.snack_bar = ft.SnackBar(ft.Text(message))
         page.snack_bar.open = True
         page.update()
 
-    # UI Components
-    title_text = ft.Text("QR Code Generator", size=20, weight=ft.FontWeight.W_100)
-    url_input = ft.TextField(label="URL", width=300, hint_text="https://example.com", dense=True, text_size=12)
-    
-    dropdown_options = [ft.dropdown.Option(key=k, text=k.capitalize()) for k in colors.keys()]
-    background_color_dropdown = ft.Dropdown(label="Background", width=120, value="white", dense=True, text_size=12, options=dropdown_options)
-    code_color_dropdown = ft.Dropdown(label="Code color", width=120, value="black", dense=True, text_size=12, options=dropdown_options)
-    border_dropdown = ft.Dropdown(
-        label="Border", width=100, value="4", dense=True, text_size=12,
-        options=[ft.dropdown.Option(key=str(i), text=str(i)) for i in [1,2,3,4,5,6,8]]
+    title = ft.Text("QR Code Generator", size=22, weight=ft.FontWeight.BOLD)
+
+    url_input = ft.TextField(
+        label="URL",
+        width=300,
+        hint_text="https://example.com"
     )
-    
-    preview_title = ft.Text("QR Preview", size=14, weight=ft.FontWeight.BOLD, text_align=ft.TextAlign.CENTER)
-    preview_content = ft.Text("Generate to see the QR code", size=12, text_align=ft.TextAlign.CENTER, color=ft.Colors.GREY_600)
+
+    dropdown_options = [
+        ft.dropdown.Option(k, k.capitalize()) for k in colors.keys()
+    ]
+
+    bg_color = ft.Dropdown(
+        label="Background",
+        width=130,
+        value="white",
+        options=dropdown_options
+    )
+
+    code_color = ft.Dropdown(
+        label="Code color",
+        width=130,
+        value="black",
+        options=dropdown_options
+    )
+
+    border = ft.Dropdown(
+        label="Border",
+        width=100,
+        value="4",
+        options=[ft.dropdown.Option(str(i)) for i in [1, 2, 3, 4, 5, 6, 8]]
+    )
+
     preview_box = ft.Container(
-        content=preview_content, width=110, height=110,
+        width=180,
+        height=180,
+        alignment=ft.alignment.center,
         border=ft.border.all(2, ft.Colors.GREY_400),
-        alignment=ft.alignment.center, bgcolor=ft.Colors.GREY_100
+        bgcolor=ft.Colors.GREY_100,
+        content=ft.Text("Generate QR", color=ft.Colors.GREY_600)
     )
-    
+
     def generate_qr(e):
-        nonlocal current_qr_base64, current_qr_image
-        
+        nonlocal current_qr_base64
+
         if not url_input.value:
             show_snackbar("Please enter a URL")
             return
-        
-        if code_color_dropdown.value == background_color_dropdown.value:
-            show_snackbar("Code color and background color must be different!")
+
+        if bg_color.value == code_color.value:
+            show_snackbar("Colors must be different")
             return
-        
-        try:
-            # Generate QR code with selected colors
-            qr = qrcode.QRCode(version=1, error_correction=qrcode.constants.ERROR_CORRECT_L, 
-                               box_size=10, border=int(border_dropdown.value))
-            qr.add_data(url_input.value)
-            qr.make(fit=True)
-            
-            img = qr.make_image(fill_color=colors[code_color_dropdown.value], 
-                               back_color=colors[background_color_dropdown.value])
-            current_qr_image = img
-            
-            # Convert to base64 for display
-            buffer = BytesIO()
-            img.save(buffer, format='PNG')
-            buffer.seek(0)
-            current_qr_base64 = base64.b64encode(buffer.read()).decode()
-            
-            preview_box.content = ft.Image(src_base64=current_qr_base64, width=170, height=170, fit=ft.ImageFit.CONTAIN)
-            show_snackbar(f"QR generated: {code_color_dropdown.value} on {background_color_dropdown.value}")
-            page.update()
-            
-        except Exception as ex:
-            show_snackbar(f"Error: {str(ex)}")
-    
-    def download_qr(e):
-        if current_qr_base64 is None:
-            show_snackbar("Please generate a QR code first")
+
+        qr = qrcode.QRCode(
+            version=1,
+            error_correction=qrcode.constants.ERROR_CORRECT_L,
+            box_size=10,
+            border=int(border.value)
+        )
+
+        qr.add_data(url_input.value)
+        qr.make(fit=True)
+
+        img = qr.make_image(
+            fill_color=colors[code_color.value],
+            back_color=colors[bg_color.value]
+        )
+
+        buffer = BytesIO()
+        img.save(buffer, format="PNG")
+        current_qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+        preview_box.content = ft.Image(
+            src=f"data:image/png;base64,{current_qr_base64}",
+            fit=ft.ImageFit.CONTAIN
+        )
+
+        page.update()
+
+    def open_qr_page(e):
+        if not current_qr_base64:
+            show_snackbar("Generate the QR first")
             return
-        
-        # Desktop: FilePicker
-        save_file_dialog.save_file(dialog_title="Save QR Code", file_name="qrcode.png",
-                                  file_type=ft.FilePickerFileType.CUSTOM, allowed_extensions=["png"])
-    
-    generate_button = ft.ElevatedButton("GENERATE", icon=ft.Icons.QR_CODE, width=150, height=35, 
-                                       on_click=generate_qr, bgcolor=ft.Colors.BLUE, color=ft.Colors.WHITE)
-    download_button = ft.ElevatedButton("DOWNLOAD", icon=ft.Icons.DOWNLOAD, width=150, height=35,
-                                       on_click=download_qr, bgcolor=ft.Colors.GREEN, color=ft.Colors.WHITE)
-    
-    # Layout
+
+        page.launch_url(f"data:image/png;base64,{current_qr_base64}")
+
     page.add(
-        title_text, ft.Container(height=5), url_input, ft.Container(height=8),
-        ft.Row([background_color_dropdown, code_color_dropdown, border_dropdown], 
-               alignment=ft.MainAxisAlignment.CENTER, spacing=8),
-        ft.Container(height=8),
-        ft.Row([generate_button, download_button], alignment=ft.MainAxisAlignment.CENTER, spacing=8),
-        ft.Container(height=10), preview_title, ft.Container(height=5), preview_box
+        ft.Column(
+            [
+                title,
+                url_input,
+                ft.Row([bg_color, code_color, border], alignment="center"),
+                ft.Row(
+                    [
+                        ft.ElevatedButton("GENERATE", on_click=generate_qr),
+                        ft.ElevatedButton("OPEN / DOWNLOAD", on_click=open_qr_page),
+                    ],
+                    alignment="center",
+                ),
+                preview_box,
+            ],
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=12,
+        )
     )
 
-ft.app(target=main)
+
+ft.app(target=main, view=ft.WEB_BROWSER)
