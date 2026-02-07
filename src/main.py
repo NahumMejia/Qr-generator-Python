@@ -6,6 +6,7 @@ import base64
 def main(page: ft.Page):
     page.title = "QR Code Generator"
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.padding = 8
 
     colors = {
@@ -39,7 +40,6 @@ def main(page: ft.Page):
         page.update()
 
     # UI Components
-    logo_image = ft.Image(src="https://iili.io/K4J8eKF.png", width=120, height=120, fit=ft.ImageFit.CONTAIN)
     title_text = ft.Text("QR Code Generator", size=20, weight=ft.FontWeight.W_100)
     url_input = ft.TextField(label="URL", width=300, hint_text="https://example.com", dense=True, text_size=12)
     
@@ -89,6 +89,7 @@ def main(page: ft.Page):
             
             preview_box.content = ft.Image(src_base64=current_qr_base64, width=170, height=170, fit=ft.ImageFit.CONTAIN)
             show_snackbar(f"QR generated: {code_color_dropdown.value} on {background_color_dropdown.value}")
+            page.update()
             
         except Exception as ex:
             show_snackbar(f"Error: {str(ex)}")
@@ -109,7 +110,7 @@ def main(page: ft.Page):
     
     # Layout
     page.add(
-        logo_image, title_text, ft.Container(height=5), url_input, ft.Container(height=8),
+        title_text, ft.Container(height=5), url_input, ft.Container(height=8),
         ft.Row([background_color_dropdown, code_color_dropdown, border_dropdown], 
                alignment=ft.MainAxisAlignment.CENTER, spacing=8),
         ft.Container(height=8),
